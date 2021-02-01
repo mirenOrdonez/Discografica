@@ -1,6 +1,7 @@
 import java.sql.ResultSet;
 import java.sql.*;
 import java.util.ArrayList;
+import javax.swing.JTable;
 
 /*
  * To change this license header, choose License Headers in Project Properties.
@@ -199,6 +200,27 @@ public class GestionConexion {
         return listaAlbumes;
     }
     
+    //Para llenar el comboBox en la Tab Álbum, con los autores
+    public ArrayList<String> llenarAutores() {
+        ArrayList<String> listaAutores = new ArrayList<String>();
+        Statement sta;
+        try {
+            sta = conexion.createStatement();
+            String query = "SELECT artista FROM album;";
+            ResultSet rs = sta.executeQuery(query);
+            
+            while (rs.next()) {
+                listaAutores.add(rs.getString("artista"));
+            }
+            
+            rs.close();
+            sta.close();
+        } catch(Exception ex) {
+            System.out.println("ERROR: " + ex.toString());
+        }
+        return listaAutores;
+    }
+    
     //--------------------------------------------------
     
     //PARA MODIFICAR DATOS
@@ -252,34 +274,44 @@ public class GestionConexion {
     //--------------------------------------------------
     
     //PARA FILTRAR BÚSQUEDAS
-    public void filtrarCancion(String nombreAlbum) {
-        //Guardo el número del álbum para tener el idAlbum.
+        
+   
+    public ResultSet filtrarAlbum(String artista) {
+        //El usuario selecciona el artista
+        String query = "SELECT * FROM album WHERE artista = ?;";
+        ResultSet datos = null;
+        try {
+            PreparedStatement psta = conexion.prepareStatement(query);
+            psta.setString(1, artista);
+            datos = psta.executeQuery();
+        
+        } catch(Exception ex) {
+            System.out.println("ERROR: " + ex.toString());
+        }
+        return datos;
+    }
+    
+    public ResultSet filtrarCancion(String nombreAlbum) {
+        //Para sacar el idAlbum de lo recibido en el jComboBox
         int aux = 0;
         String album = "";
         while (nombreAlbum.charAt(aux) != '-') {
             album = album + nombreAlbum.charAt(aux);
             aux++;
         }
-        
         //El usuario selecciona el álbum
-        String query = "SELECT * FROM canciones WHERE album = ?;";
+        String query = "SELECT canciones.*, album.nombre FROM canciones, album WHERE "
+                + "album = ? && canciones.album = album.idAlbum ORDER BY idCancion;";
         
+        ResultSet datos = null;
         try {
             PreparedStatement psta = conexion.prepareStatement(query);
             psta.setString(1, album);
-            ResultSet rs = psta.executeQuery();
-            while (rs.next()) {
-                System.out.println("ID: " + rs.getInt("idCancion") + ", TITULO: " + 
-                        rs.getString("titulo") + ", DURACION: " + rs.getString("duracion") + 
-                        ", ALBUM: " + rs.getInt("album"));
-            }
-            rs.close();
-            psta.close();
+            datos = psta.executeQuery();
         
         } catch(Exception ex) {
             System.out.println("ERROR: " + ex.toString());
         }
+        return datos;
     }
-    
-   
 }
